@@ -1,8 +1,9 @@
-// Script to login 100 accounts sequentially and create 100 family trees
+// Script to login 999 accounts sequentially and create 999 family trees
 // Each account will login once and create one family tree
 
 import http from 'k6/http';
 import { check, sleep } from 'k6';
+import exec from 'k6/execution';
 
 // Load test accounts from JSON
 const accounts = JSON.parse(open('./test-accounts.json'));
@@ -11,16 +12,22 @@ const accounts = JSON.parse(open('./test-accounts.json'));
 let failedAccounts = [];
 
 export const options = {
-  vus: 1, // Run sequentially with 1 virtual user
-  iterations: 100, // Run 100 iterations (one per account)
+  scenarios: {
+    create_trees: {
+      executor: 'shared-iterations',
+      vus: 10, // Run with 10 parallel virtual users
+      iterations: 999, // Total 999 iterations shared among VUs
+      maxDuration: '30m', // Allow up to 30 minutes
+    },
+  },
 };
 
 export default function() {
-  // Get the account for this iteration
-  const accountIndex = __ITER; // K6 provides __ITER for current iteration number
+  // Get unique account index using scenario iteration counter
+  const accountIndex = exec.scenario.iterationInTest;
   const account = accounts[accountIndex];
   
-  console.log(`\n[${accountIndex + 1}/100] Processing account: ${account.email}`);
+  console.log(`\n[${accountIndex + 1}/999] Processing account: ${account.email}`);
   
   // Step 1: Login
   const loginPayload = JSON.stringify({
@@ -37,7 +44,7 @@ export default function() {
   
   console.log(`  → Logging in...`);
   const loginRes = http.post(
-    'https://be.dev.familytree.io.vn/api/Account/login',
+    'https://localhost:5001/api/Account/login',
     loginPayload,
     loginParams
   );
@@ -86,7 +93,7 @@ export default function() {
   
   console.log(`  → Creating family tree: "${familyTreeName}"...`);
   const createTreeRes = http.post(
-    'https://be.dev.familytree.io.vn/api/FamilyTree',
+    'https://localhost:5001/api/FamilyTree',
     formData,
     createTreeParams
   );

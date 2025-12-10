@@ -4,11 +4,12 @@ const fs = require('fs');
 // Load test accounts
 const accounts = JSON.parse(fs.readFileSync('./test-accounts.json', 'utf8'));
 
-const API_BASE = 'be.dev.familytree.io.vn';
+const API_BASE = 'api.familytree.io.vn';
+const API_PORT = 443;
 const tokens = {};
 let completed = 0;
 
-console.log('🔐 Starting login process for 100 accounts...\n');
+console.log(`🔐 Starting login process for ${accounts.length} accounts...\n`);
 
 // Function to login one account
 function loginAccount(account, index) {
@@ -20,7 +21,7 @@ function loginAccount(account, index) {
 
         const options = {
             hostname: API_BASE,
-            port: 443,
+            port: API_PORT,
             path: '/api/Account/login',
             method: 'POST',
             headers: {
@@ -46,9 +47,9 @@ function loginAccount(account, index) {
                             token: token,
                             loginAt: new Date().toISOString()
                         };
-                        console.log(`✅ [${completed + 1}/100] ${account.email}`);
+                        console.log(`✅ [${completed + 1}/${accounts.length}] ${account.email}`);
                     } else {
-                        console.log(`❌ [${completed + 1}/100] ${account.email} - Status: ${res.statusCode}`);
+                        console.log(`❌ [${completed + 1}/${accounts.length}] ${account.email} - Status: ${res.statusCode}`);
                         tokens[index] = {
                             email: account.email,
                             token: null,
@@ -56,7 +57,7 @@ function loginAccount(account, index) {
                         };
                     }
                 } catch (err) {
-                    console.log(`❌ [${completed + 1}/100] ${account.email} - Parse error: ${err.message}`);
+                    console.log(`❌ [${completed + 1}/${accounts.length}] ${account.email} - Parse error: ${err.message}`);
                     tokens[index] = {
                         email: account.email,
                         token: null,
@@ -69,7 +70,7 @@ function loginAccount(account, index) {
         });
 
         req.on('error', (err) => {
-            console.log(`❌ [${completed + 1}/100] ${account.email} - Request error: ${err.message}`);
+            console.log(`❌ [${completed + 1}/${accounts.length}] ${account.email} - Request error: ${err.message}`);
             tokens[index] = {
                 email: account.email,
                 token: null,
@@ -89,9 +90,9 @@ async function loginAllAccounts() {
     for (let i = 0; i < accounts.length; i++) {
         await loginAccount(accounts[i], i);
         
-        // Progress indicator every 10 accounts
-        if ((i + 1) % 10 === 0) {
-            console.log(`\n📊 Progress: ${i + 1}/100 accounts processed\n`);
+        // Progress indicator every 50 accounts
+        if ((i + 1) % 50 === 0) {
+            console.log(`\n📊 Progress: ${i + 1}/${accounts.length} accounts processed\n`);
         }
         
         // Small delay to avoid overwhelming server
@@ -106,8 +107,8 @@ loginAllAccounts().then(() => {
     
     console.log('\n' + '='.repeat(60));
     console.log(`🎉 Login process completed!`);
-    console.log(`✅ Successful: ${successCount}/100`);
-    console.log(`❌ Failed: ${100 - successCount}/100`);
+    console.log(`✅ Successful: ${successCount}/${accounts.length}`);
+    console.log(`❌ Failed: ${accounts.length - successCount}/${accounts.length}`);
     console.log('='.repeat(60) + '\n');
     
     // Save tokens to file
@@ -123,7 +124,7 @@ loginAllAccounts().then(() => {
     
     // Summary
     console.log('📝 Summary:');
-    console.log(`   - Total accounts: 100`);
+    console.log(`   - Total accounts: ${accounts.length}`);
     console.log(`   - Successful logins: ${successCount}`);
     console.log(`   - Token file: access-tokens.json`);
     console.log(`   - Valid until: ${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()}`);

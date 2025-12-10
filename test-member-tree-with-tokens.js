@@ -7,26 +7,23 @@ const errorRate = new Rate('errors');
 
 // Load pre-generated tokens and family trees
 const tokenData = JSON.parse(open('./access-tokens.json'));
-const familyTrees = JSON.parse(open('./_FamilyTrees__202512012313.json'));
+const familyTrees = JSON.parse(open('./_FamilyTrees__202512092014.json'));
 
 // Extract valid tokens
 const validTokens = Object.values(tokenData.tokens).filter(t => t.token !== null);
 
 console.log(`✅ Loaded ${validTokens.length} valid tokens (generated at: ${tokenData.generatedAt})`);
 
-// Counter for sequential access
-let currentIndex = 0;
-
-// Test configuration - Test member-tree API với tokens có sẵn
+// Test configuration - Test member-tree API 
 export const options = {
     scenarios: {
         member_tree_test: {
             executor: 'constant-arrival-rate',  
-            rate: 5,                           // 10 requests per second
+            rate: 100,                           
             timeUnit: '1s',                     
-            duration: '3m',                     // 3 phút
-            preAllocatedVUs: 30,               
-            maxVUs: 50,                         
+            duration: '1m',                     
+            preAllocatedVUs: 80,               
+            maxVUs: 120,                         
         },
     },
     thresholds: {
@@ -37,17 +34,23 @@ export const options = {
 };
 
 export default function() {
-    // Pick token theo thứ tự (không random)
-    const index = currentIndex % validTokens.length;
-    currentIndex++;
-    
+    // Pick random token
+    const index = Math.floor(Math.random() * validTokens.length);
     const tokenInfo = validTokens[index];
     
-    // Extract username from email (loadtest001@ftm.com → loadtest001)
+
     const username = tokenInfo.email.split('@')[0];
     
-    // Tìm tree tương ứng với username
-    const tree = familyTrees.find(t => t.Owner === username);
+    const tree = familyTrees.find(t => {
+      
+        const ownerMatch = t.Owner.match(/^loadtest(\d+)$/);
+        if (!ownerMatch) return false;
+        
+        const ownerNum = ownerMatch[1];
+
+        const expectedUsername = 'loadtest' + ownerNum.padStart(4, '0');
+        return username === expectedUsername;
+    });
     
     if (!tree) {
         console.error(`❌ Tree not found for ${tokenInfo.email} (username: ${username})`);
@@ -57,7 +60,7 @@ export default function() {
     
     // Test member-tree API với token có sẵn
     const memberTreeRes = http.get(
-        `https://be.dev.familytree.io.vn/api/ftmember/member-tree?ftId=${tree.Id}`,
+        `https://api.familytree.io.vn/api/ftmember/member-tree?ftId=${tree.Id}`,
         {
             headers: {
                 'Authorization': `Bearer ${tokenInfo.token}`,

@@ -27,7 +27,7 @@ BEGIN
     -- If no existing user found, use default hash
     IF v_password_hash IS NULL THEN
         -- This is a sample hash - may need to be replaced with actual hash from your system
-        v_password_hash := 'AQAAAAIAAYagAAAAEJxQdLWj9cK3tYXkzm5jNqK4VqHxJ5rK8L9MnOpQrStUvWxYzA1BcDe2FgHi3JkLmN==';
+        v_password_hash := 'AQAAAAIAAYagAAAAEA/pGXZeNCMKXhOaurr8+G9PTsaEGrpcqnbZDShvYK/IE5iCvH4+q98F8zjtw2ftww==';
         RAISE NOTICE 'WARNING: Using default password hash. You may need to reset passwords.';
     ELSE
         RAISE NOTICE 'Using password hash from existing user.';
@@ -36,10 +36,10 @@ BEGIN
     RAISE NOTICE 'Creating 100 test accounts...';
     RAISE NOTICE '';
     
-    -- Loop to create 100 accounts
-    FOR i IN 1..100 LOOP
-        -- Format: loadtest001@ftm.com to loadtest100@ftm.com
-        v_email := 'loadtest' || LPAD(i::TEXT, 3, '0') || '@ftm.com';
+    -- Loop to create 1000 accounts
+    FOR i IN 1..1000 LOOP
+        -- Format: loadtest001@ftm.com to loadtest1000@ftm.com
+        v_email := 'loadtest' || LPAD(i::TEXT, 4, '0') || '@ftm.com';
         v_phone := '09' || LPAD(i::TEXT, 8, '0');
         v_username := 'loadtest' || LPAD(i::TEXT, 3, '0');
         v_user_id := gen_random_uuid();
